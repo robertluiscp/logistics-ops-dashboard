@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logistics Ops — Transport Dashboard</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+<link href="https://unpkg.com/tabulator-tables@6.2.1/dist/css/tabulator_midnight.min.css" rel="stylesheet">
+<script src="https://unpkg.com/tabulator-tables@6.2.1/dist/js/tabulator.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<link rel="stylesheet" href="css/estilo.css?v={{V_CSS}}">
+</head>
+<body>
+
+<div id="tela-login" class="tela-login" hidden>
+  <form id="form-login" class="login-caixa">
+    <div class="login-marca">
+      <span class="topo-marca-nome">OPS</span><span class="topo-marca-sul">HUB</span>
+    </div>
+    <div class="login-subtitulo">
+      <span class="rotulo-pt">Painel de Operação de Transporte — Regional (demo)</span>
+      <span class="rotulo-zh">运输运营面板 — 区域（演示）</span>
+    </div>
+
+    <label class="login-campo">
+      <span><span class="rotulo-pt">Número do Funcionário</span><span class="rotulo-zh">员工工号</span></span>
+      <input type="text" id="login-usuario" autocomplete="username" placeholder="Ex: operator01" inputmode="numeric" required>
+    </label>
+    <label class="login-campo">
+      <span><span class="rotulo-pt">Senha</span><span class="rotulo-zh">密码</span></span>
+      <input type="password" id="login-senha" autocomplete="current-password" required>
+    </label>
+    <label class="login-lembrar">
+      <input type="checkbox" id="login-lembrar">
+      <span><span class="rotulo-pt">Lembrar de mim</span><span class="rotulo-zh">记住我</span></span>
+    </label>
+
+    <div id="login-erro" class="login-erro" hidden></div>
+
+    <button type="submit" class="login-botao" id="login-botao">
+      <span class="rotulo-pt">Entrar</span><span class="rotulo-zh">登录</span>
+    </button>
+  </form>
+</div>
+
+<header class="topo">
+  <button class="topo-marca" id="ir-inicio" title="Voltar ao menu / 返回菜单">
+    <span class="topo-marca-nome">OPS</span><span class="topo-marca-sul">HUB</span>
+  </button>
+
+  <nav class="topo-abas" id="abas-transporte" hidden>
+    <button class="aba-relatorio ativa" data-sub="troncal">
+      <span class="rotulo-pt">Troncais</span><span class="rotulo-zh">干线</span>
+    </button>
+    <button class="aba-relatorio" data-sub="secundaria">
+      <span class="rotulo-pt">Secundárias</span><span class="rotulo-zh">支线</span>
+    </button>
+    <button class="aba-relatorio aba-alerta" data-sub="candidatos">
+      <span class="rotulo-pt">Expedido Não Chegou</span><span class="rotulo-zh">已发出未到达</span>
+    </button>
+  </nav>
+
+  <nav class="topo-abas" id="abas-indicadores" hidden>
+    <button class="aba-relatorio ativa" data-sub="taxa-expedicao">
+      <span class="rotulo-pt">Taxa de Expedição</span><span class="rotulo-zh">发运及时率</span>
+    </button>
+  </nav>
+
+  <nav class="topo-abas" id="abas-tickets" hidden>
+    <button class="aba-relatorio ativa" data-sub="comum">
+      <span class="rotulo-pt">Tickets Comuns</span><span class="rotulo-zh">普通工单</span>
+    </button>
+    <button class="aba-relatorio" data-sub="plataforma">
+      <span class="rotulo-pt">Tickets Plataforma (Marketplace)</span><span class="rotulo-zh">平台工单</span>
+    </button>
+  </nav>
+
+  <nav class="topo-abas" id="abas-dropoff" hidden>
+    <button class="aba-relatorio ativa" data-sub="pudo">
+      <span class="rotulo-pt">Pudo (Pontos de Coleta)</span><span class="rotulo-zh">Pudo 揽收点</span>
+    </button>
+    <button class="aba-relatorio" data-sub="c2c">
+      <span class="rotulo-pt">C2C</span><span class="rotulo-zh">C2C</span>
+    </button>
+  </nav>
+
+  <div class="topo-status">
+    <span class="badge-relogio" id="relogio">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      <span id="relogio-hora">--:--:--</span>
+    </span>
+    <span class="badge-status" id="badge-atualizacao">
+      <span class="rotulo-pt" id="ultima-atualizacao">carregando…</span>
+      <span class="rotulo-zh" id="ultima-atualizacao-zh">加载中…</span>
+    </span>
+    <button class="badge-status badge-ciclo" id="badge-ciclo-automatico" title="Ver histórico do ciclo automático / 查看自动周期历史">
+      <span class="ciclo-ponto" id="ciclo-ponto"></span>
+      <span class="rotulo-pt" id="ciclo-texto">Ciclo: carregando…</span>
+      <span class="rotulo-zh" id="ciclo-texto-zh">自动周期：加载中…</span>
+    </button>
+    <button id="btn-atualizar" class="btn-atualizar" title="Atualizar agora / 立即刷新">↻</button>
+    <button id="btn-admin" class="btn-atualizar" title="Administração de contas / 账户管理" hidden>👤</button>
+    <span class="badge-status" id="badge-usuario"><span id="usuario-logado-nome">—</span></span>
+    <button id="btn-sair" class="btn-atualizar" title="Sair / 登出">⏻</button>
+  </div>
+</header>
+
+<main class="conteudo">
+
+  <section id="tela-inicio" class="tela-inicio" hidden>
+    <div class="inicio-cabecalho">
+      <h1>
+        <span class="rotulo-pt">Painel de Operação de Transporte — Regional (demo)</span>
+        <span class="rotulo-zh">运输运营面板 — 区域（演示）</span>
+      </h1>
+      <p>
+        <span class="rotulo-pt">Escolha um módulo para começar.</span>
+        <span class="rotulo-zh">选择一个模块开始。</span>
+      </p>
+    </div>
+    <div class="modulos-grid" id="modulos-grid">
+      <button class="modulo-bloco" data-modulo="transporte">
+        <span class="modulo-icone">
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/>
+          </svg>
+        </span>
+        <span class="modulo-nome">Transporte</span>
+        <span class="modulo-desc">
+          <span class="rotulo-pt">Troncais, Secundárias e Expedido Não Chegou</span>
+          <span class="rotulo-zh">干线、支线、已发出未到达</span>
+        </span>
+      </button>
+      <button class="modulo-bloco" data-modulo="indicadores">
+        <span class="modulo-icone">
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16l3-4 3 2 5-7"/>
+          </svg>
+        </span>
+        <span class="modulo-nome">Indicadores</span>
+        <span class="modulo-desc">
+          <span class="rotulo-pt">Taxa de Expedição no prazo (SC→HUB, SC→SC, HUB→PDD)</span>
+          <span class="rotulo-zh">发运及时率（进港、出港、集散散货）</span>
+        </span>
+      </button>
+      <button class="modulo-bloco" data-modulo="tickets">
+        <span class="modulo-icone">
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M5 4h11l3 3v13H5z"/><path d="M9 9h6M9 13h6M9 17h4"/>
+          </svg>
+        </span>
+        <span class="modulo-nome">Tickets</span>
+        <span class="modulo-desc">
+          <span class="rotulo-pt">Tickets de reclamação do SAC — comuns e Marketplace</span>
+          <span class="rotulo-zh">客服投诉工单 — 普通与 Marketplace</span>
+        </span>
+      </button>
+      <button class="modulo-bloco" data-modulo="dropoff">
+        <span class="modulo-icone">
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6">
+            <path d="M3 10l9-6 9 6"/><path d="M5 10v9h14v-9"/><path d="M10 19v-6h4v6"/>
+          </svg>
+        </span>
+        <span class="modulo-nome">Dropoff &amp; C2C</span>
+        <span class="modulo-desc">
+          <span class="rotulo-pt">Pontos de coleta (Pudo) e pedidos C2C, com prazo de entrega</span>
+          <span class="rotulo-zh">揽收点 (Pudo) 与 C2C 订单，含预计送达期限</span>
+        </span>
+      </button>
+    </div>
+  </section>
+
+  <section id="modulo-transporte" class="modulo" hidden>
+
+  <section class="barra-filtros" id="barra-filtros-pernas">
+    <input id="filtro-texto" type="search" placeholder="Filtrar lista... / 筛选列表...">
+
+    <label class="toggle-carga" title="Mostrar só viagens com carga / 只显示有货的班次">
+      <input type="checkbox" id="filtro-com-carga">
+      <span class="toggle-trilho"><span class="toggle-bola"></span></span>
+      <span class="toggle-texto"><span class="rotulo-pt">Com Carga</span><span class="rotulo-zh">有货</span></span>
+    </label>
+
+    <label class="toggle-carga" title="Mostrar só viagens concluídas sem Bipe de Deslacre do Veículo / 只显示已完成但没有解锁扫描的班次">
+      <input type="checkbox" id="filtro-sem-deslacre">
+      <span class="toggle-trilho"><span class="toggle-bola"></span></span>
+      <span class="toggle-texto"><span class="rotulo-pt">Sem Deslacre</span><span class="rotulo-zh">无解锁扫描</span></span>
+    </label>
+
+    <div class="etapas" id="filtro-etapas">
+      <button class="etapa-botao ativa" data-etapa="">
+        <span class="rotulo-pt">Todos</span><span class="rotulo-zh">全部</span>
+      </button>
+      <button class="etapa-botao" data-etapa="Planejado">
+        <span class="rotulo-pt">Planejado</span><span class="rotulo-zh">计划中</span>
+      </button>
+      <button class="etapa-botao" data-etapa="Carregando">
+        <span class="rotulo-pt">Carregando</span><span class="rotulo-zh">装货中</span>
+      </button>
+      <button class="etapa-botao" data-etapa="Em Trânsito">
+        <span class="rotulo-pt">Em Trânsito</span><span class="rotulo-zh">运输中</span>
+      </button>
+      <button class="etapa-botao" data-etapa="Em Descarregamento">
+        <span class="rotulo-pt">Em Descarregamento</span><span class="rotulo-zh">卸货中</span>
+      </button>
+      <button class="etapa-botao" data-etapa="Concluído">
+        <span class="rotulo-pt">Concluído</span><span class="rotulo-zh">已完成</span>
+      </button>
+      <button class="etapa-botao" data-etapa="Cancelado">
+        <span class="rotulo-pt">Cancelado</span><span class="rotulo-zh">已取消</span>
+      </button>
+    </div>
+
+    <select id="filtro-estado">
+      <option value="">Todos os estados / 所有省份</option>
+      <option value="PR">PR</option>
+      <option value="SC">SC</option>
+      <option value="RS">RS</option>
+    </select>
+
+    <span class="badge-filtrados"><span id="contagem-filtrados">0</span> <span class="rotulo-pt">filtrados</span><span class="rotulo-zh">已筛选</span></span>
+
+    <button id="btn-exportar" class="btn-exportar">
+      <span class="rotulo-pt">Exportar</span><span class="rotulo-zh">导出</span>
+    </button>
+  </section>
+
+  <section class="painel-resumo" id="painel-resumo-candidatos" hidden>
+    <div class="resumo-card resumo-prioridade">
+      <span class="resumo-numero" id="resumo-dentro-prazo">0</span>
+      <span class="resumo-label">
+        <span class="rotulo-pt">dentro do prazo — agir agora</span>
+        <span class="rotulo-zh">期限内——立即处理</span>
+      </span>
+    </div>
+    <div class="resumo-card resumo-urgente">
+      <span class="resumo-numero" id="resumo-urgentes">0</span>
+      <span class="resumo-label">
+        <span class="rotulo-pt">com menos de 1h de prazo</span>
+        <span class="rotulo-zh">剩余不到1小时</span>
+      </span>
+    </div>
+    <div class="resumo-card resumo-vencido">
+      <span class="resumo-numero" id="resumo-fora-prazo">0</span>
+      <span class="resumo-label">
+        <span class="rotulo-pt">fora do prazo</span>
+        <span class="rotulo-zh">已超期</span>
+      </span>
+    </div>
+    <div class="resumo-card resumo-critico">
+      <span class="resumo-numero" id="resumo-total-candidatos">0</span>
+      <span class="resumo-label">
+        <span class="rotulo-pt">total (últimos 3 dias)</span>
+        <span class="rotulo-zh">总数（最近3天）</span>
+      </span>
+    </div>
+    <label class="toggle-carga" title="Mostrar só quem ainda está dentro do prazo (esconde os já vencidos) / 只显示仍在期限内的（隐藏已超期）">
+      <input type="checkbox" id="filtro-dentro-prazo">
+      <span class="toggle-trilho"><span class="toggle-bola"></span></span>
+      <span class="toggle-texto"><span class="rotulo-pt">Só Dentro do Prazo</span><span class="rotulo-zh">仅期限内</span></span>
+    </label>
+
+    <button id="btn-exportar-candidatos" class="btn-exportar btn-exportar-candidatos" title="Exportar pra registrar Expedido Não Chegou no LMS / 导出以在LMS登记已发出未到达">
+      <span class="rotulo-pt">Exportar</span><span class="rotulo-zh">导出</span>
+    </button>
+  </section>
+
+  <div id="tabela-pernas" class="tabela"></div>
+  <div id="tabela-candidatos" class="tabela" hidden></div>
+
+  </section>
+
+  <section id="modulo-indicadores" class="modulo" hidden>
+  <section id="painel-taxas" class="painel-taxas">
+    <div class="taxas-controles">
+      <div class="taxas-indicadores" id="taxas-indicadores">
+        <button class="taxa-ind ativa" data-tipo="sc_hub">
+          <span class="rotulo-pt">SC → HUB</span><span class="rotulo-zh">进港 (SC→HUB)</span>
+        </button>
+        <button class="taxa-ind" data-tipo="sc_sc">
+          <span class="rotulo-pt">SC → SC</span><span class="rotulo-zh">出港 (SC→SC)</span>
+        </button>
+        <button class="taxa-ind" data-tipo="hub_pdd">
+          <span class="rotulo-pt">HUB → PDD</span><span class="rotulo-zh">集散散货 (HUB→PDD)</span>
+        </button>
+      </div>
+      <div class="taxas-granularidade" id="taxas-granularidade">
+        <button class="taxa-gran" data-gran="mes"><span class="rotulo-pt">Mês</span><span class="rotulo-zh">月</span></button>
+        <button class="taxa-gran" data-gran="semana"><span class="rotulo-pt">Semana</span><span class="rotulo-zh">周</span></button>
+        <button class="taxa-gran ativa" data-gran="dia"><span class="rotulo-pt">Dia</span><span class="rotulo-zh">日</span></button>
+      </div>
+      <span class="taxa-meta-badge">
+        <span class="rotulo-pt">Meta</span><span class="rotulo-zh">目标</span>&nbsp;<strong>90%</strong>
+      </span>
+      <button class="badge-status badge-ciclo" id="badge-extracao-taxas" title="Ver histórico da extração / 查看提取历史">
+        <span class="ciclo-ponto" id="extracao-taxas-ponto"></span>
+        <span class="rotulo-pt" id="extracao-taxas-texto">Extração: carregando…</span>
+        <span class="rotulo-zh" id="extracao-taxas-texto-zh">数据提取：加载中…</span>
+      </button>
+      <button id="btn-exportar-taxas" class="btn-exportar" title="Exportar detalhe diário / 导出每日明细">
+        <span class="rotulo-pt">Exportar</span><span class="rotulo-zh">导出</span>
+      </button>
+    </div>
+
+    <div class="painel-resumo painel-resumo-taxas" id="painel-resumo-taxas">
+      <div class="resumo-card resumo-taxa" id="card-taxa-mes">
+        <span class="resumo-numero">–</span>
+        <span class="resumo-label"><span class="rotulo-pt">mês atual</span><span class="rotulo-zh">本月</span></span>
+      </div>
+      <div class="resumo-card resumo-taxa" id="card-taxa-semana">
+        <span class="resumo-numero">–</span>
+        <span class="resumo-label"><span class="rotulo-pt">últimos 7 dias</span><span class="rotulo-zh">近7天</span></span>
+      </div>
+      <div class="resumo-card resumo-taxa" id="card-taxa-dia">
+        <span class="resumo-numero">–</span>
+        <span class="resumo-label"><span class="rotulo-pt">último dia fechado</span><span class="rotulo-zh">最近结算日</span></span>
+      </div>
+      <div class="resumo-card resumo-taxa" id="card-taxa-abaixo">
+        <span class="resumo-numero">–</span>
+        <span class="resumo-label"><span class="rotulo-pt">rotas abaixo da meta (período)</span><span class="rotulo-zh">低于目标的线路</span></span>
+      </div>
+    </div>
+
+    <div class="taxas-grafico-caixa">
+      <div class="taxas-grafico-titulo">
+        <span class="rotulo-pt">Tendência diária — taxa consolidada da regional</span>
+        <span class="rotulo-zh">每日趋势 — 大区综合及时率</span>
+      </div>
+      <div id="taxas-grafico"></div>
+    </div>
+
+    <div class="taxas-matriz-caixa">
+      <div class="taxas-grafico-titulo">
+        <span class="rotulo-pt">Matriz por rota × período (taxa ponderada por volume)</span>
+        <span class="rotulo-zh">线路 × 周期矩阵（按量加权）</span>
+      </div>
+      <div id="taxas-matriz" class="taxas-matriz-scroll"></div>
+    </div>
+  </section>
+  </section>
+
+  <section id="modulo-tickets" class="modulo" hidden>
+    <section class="barra-filtros" id="barra-filtros-tickets">
+      <input id="filtro-texto-tickets" type="search" placeholder="Filtrar tickets... / 筛选工单...">
+      <select id="filtro-tickets-priority" hidden>
+        <option value="">PRIORITY + normais</option>
+        <option value="priority">Só PRIORITY</option>
+        <option value="normal">Só normais</option>
+      </select>
+      <label class="toggle-carga" title="Mostrar só os que ainda estão dentro do prazo / 只显示仍在期限内的">
+        <input type="checkbox" id="filtro-tickets-no-prazo">
+        <span class="toggle-trilho"><span class="toggle-bola"></span></span>
+        <span class="toggle-texto"><span class="rotulo-pt">Só Dentro do Prazo</span><span class="rotulo-zh">仅期限内</span></span>
+      </label>
+      <span class="badge-filtrados"><span id="contagem-tickets">0</span> <span class="rotulo-pt">tickets</span><span class="rotulo-zh">工单</span></span>
+      <button id="btn-exportar-tickets" class="btn-exportar">
+        <span class="rotulo-pt">Exportar</span><span class="rotulo-zh">导出</span>
+      </button>
+    </section>
+
+    <section class="painel-resumo painel-resumo-tickets" id="painel-resumo-tickets">
+      <div class="resumo-card resumo-tk-critico">
+        <span class="resumo-numero" id="tk-15min">0</span>
+        <span class="resumo-label"><span class="rotulo-pt">vence em 15 min</span><span class="rotulo-zh">15分钟内到期</span></span>
+      </div>
+      <div class="resumo-card resumo-tk-critico">
+        <span class="resumo-numero" id="tk-1h">0</span>
+        <span class="resumo-label"><span class="rotulo-pt">vence em 1 h</span><span class="rotulo-zh">1小时内到期</span></span>
+      </div>
+      <div class="resumo-card resumo-tk-vencido">
+        <span class="resumo-numero" id="tk-vencido">0</span>
+        <span class="resumo-label"><span class="rotulo-pt">já fora do prazo</span><span class="rotulo-zh">已超期</span></span>
+      </div>
+      <div class="resumo-card resumo-tk-hoje">
+        <span class="resumo-numero" id="tk-hoje">0</span>
+        <span class="resumo-label"><span class="rotulo-pt">vencendo hoje</span><span class="rotulo-zh">今日到期</span></span>
+      </div>
+      <div class="resumo-card resumo-tk-planej">
+        <span class="resumo-numero" id="tk-antes">0</span>
+        <span class="resumo-label"><span class="rotulo-pt">vencendo antes do meio-dia</span><span class="rotulo-zh">12点前到期</span></span>
+      </div>
+      <div class="resumo-card resumo-tk-planej">
+        <span class="resumo-numero" id="tk-apos">0</span>
+        <span class="resumo-label"><span class="rotulo-pt">vencendo após o meio-dia</span><span class="rotulo-zh">12点后到期</span></span>
+      </div>
+      <div class="resumo-card resumo-tk-taxa">
+        <span class="resumo-numero" id="tk-taxa">–</span>
+        <span class="resumo-label"><span class="rotulo-pt">taxa no prazo (em aberto)</span><span class="rotulo-zh">按时率（未处理）</span></span>
+      </div>
+    </section>
+
+    <div id="tabela-tickets" class="tabela"></div>
+  </section>
+
+  <section id="modulo-dropoff" class="modulo" hidden>
+
+    <section id="painel-pudo" class="painel-taxas">
+      <div class="taxas-controles">
+        <div class="filtro-periodo">
+          <label><span class="rotulo-pt">De</span><span class="rotulo-zh">从</span>
+            <input type="date" id="pudo-data-de">
+          </label>
+          <label><span class="rotulo-pt">Até</span><span class="rotulo-zh">到</span>
+            <input type="date" id="pudo-data-ate">
+          </label>
+        </div>
+        <button class="badge-status badge-ciclo" id="badge-extracao-pudo" title="Ver histórico da extração / 查看提取历史">
+          <span class="ciclo-ponto" id="extracao-pudo-ponto"></span>
+          <span class="rotulo-pt" id="extracao-pudo-texto">Extração: carregando…</span>
+          <span class="rotulo-zh" id="extracao-pudo-texto-zh">数据提取：加载中…</span>
+        </button>
+        <button id="btn-exportar-pudo" class="btn-exportar" title="Exportar os mais recentes / 导出最新数据">
+          <span class="rotulo-pt">Exportar recentes</span><span class="rotulo-zh">导出</span>
+        </button>
+      </div>
+
+      <div class="painel-resumo painel-resumo-taxas" id="painel-resumo-pudo">
+        <div class="resumo-card resumo-taxa">
+          <span class="resumo-numero" id="pudo-total">–</span>
+          <span class="resumo-label"><span class="rotulo-pt">total de pacotes Pudo</span><span class="rotulo-zh">Pudo包裹总量</span></span>
+        </div>
+        <div class="resumo-card resumo-taxa">
+          <span class="resumo-numero" id="pudo-dropoffs">–</span>
+          <span class="resumo-label"><span class="rotulo-pt">total de Dropoffs</span><span class="rotulo-zh">揽收点总数</span></span>
+        </div>
+        <div class="resumo-card resumo-taxa">
+          <span class="resumo-numero" id="pudo-pontos">–</span>
+          <span class="resumo-label"><span class="rotulo-pt">bases ativas</span><span class="rotulo-zh">活跃网点</span></span>
+        </div>
+        <div class="resumo-card resumo-taxa">
+          <span class="resumo-numero" id="pudo-tempo-coleta">–</span>
+          <span class="resumo-label"><span class="rotulo-pt">tempo médio até coleta</span><span class="rotulo-zh">平均揽收时长</span></span>
+        </div>
+      </div>
+
+      <div class="taxas-grafico-caixa dropoff-grafico-caixa-mensal">
+        <div class="taxas-grafico-titulo">
+          <span class="rotulo-pt">Referência mensal</span><span class="rotulo-zh">月度参考</span>
+        </div>
+        <div id="pudo-grafico-mensal"></div>
+      </div>
+
+      <div class="dropoff-colunas-secundarias">
+        <div class="taxas-matriz-caixa dropoff-donut-caixa">
+          <div class="taxas-grafico-titulo"><span class="rotulo-pt">Status dos pacotes</span><span class="rotulo-zh">包裹状态</span></div>
+          <div id="pudo-por-status" class="dropoff-donut"></div>
+        </div>
+        <div class="taxas-matriz-caixa dropoff-barrah-caixa">
+          <div class="taxas-grafico-titulo">
+            <span class="rotulo-pt">C2C por Pudo</span><span class="rotulo-zh">按Pudo揽收点</span>
+            <span class="dropoff-info-tooltip" id="c2c-por-pudo-info" title="Pedidos C2C feitos diretamente pelo Pudo (Origem do Pedido = Official Site/Partner App/Partner Web/Official H5), agrupados pelo ponto de coleta Pudo que os fez.">ⓘ</span>
+          </div>
+          <div id="c2c-por-pudo" class="dropoff-barrah"></div>
+        </div>
+      </div>
+
+      <div class="taxas-grafico-caixa dropoff-grafico-caixa">
+        <div class="taxas-grafico-titulo">
+          <span class="rotulo-pt">Volume por dia</span><span class="rotulo-zh">每日货量</span>
+        </div>
+        <div id="pudo-grafico"></div>
+      </div>
+
+      <div class="dropoff-colunas">
+        <div class="taxas-matriz-caixa dropoff-lista-caixa">
+          <div class="taxas-grafico-titulo"><span class="rotulo-pt">Por cidade</span><span class="rotulo-zh">按城市</span></div>
+          <div id="pudo-por-cidade" class="dropoff-lista"></div>
+        </div>
+        <div class="taxas-matriz-caixa dropoff-lista-caixa">
+          <div class="taxas-grafico-titulo"><span class="rotulo-pt">Quantidade de pacotes por Pudo</span><span class="rotulo-zh">按Pudo揽收点</span></div>
+          <div id="pudo-por-pudo" class="dropoff-lista"></div>
+        </div>
+        <div class="taxas-matriz-caixa dropoff-lista-caixa">
+          <div class="taxas-grafico-titulo"><span class="rotulo-pt">Origem dos pedidos</span><span class="rotulo-zh">订单来源</span></div>
+          <div id="pudo-por-origem" class="dropoff-lista"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="painel-c2c" class="painel-taxas" hidden>
+      <div class="taxas-controles">
+        <input id="filtro-texto-c2c" type="search" class="dropoff-input" placeholder="Filtrar C2C... / 筛选C2C...">
+        <div class="filtro-periodo">
+          <label><span class="rotulo-pt">De</span><span class="rotulo-zh">从</span>
+            <input type="date" id="c2c-data-de">
+          </label>
+          <label><span class="rotulo-pt">Até</span><span class="rotulo-zh">到</span>
+            <input type="date" id="c2c-data-ate">
+          </label>
+        </div>
+        <label class="toggle-carga" title="Mostrar só os que ainda estão dentro do prazo / 只显示仍在期限内的">
+          <input type="checkbox" id="filtro-c2c-no-prazo">
+          <span class="toggle-trilho"><span class="toggle-bola"></span></span>
+          <span class="toggle-texto"><span class="rotulo-pt">Só Dentro do Prazo</span><span class="rotulo-zh">仅期限内</span></span>
+        </label>
+        <button class="badge-status badge-ciclo" id="badge-extracao-c2c" title="Ver histórico da extração / 查看提取历史">
+          <span class="ciclo-ponto" id="extracao-c2c-ponto"></span>
+          <span class="rotulo-pt" id="extracao-c2c-texto">Extração: carregando…</span>
+          <span class="rotulo-zh" id="extracao-c2c-texto-zh">数据提取：加载中…</span>
+        </button>
+        <button id="btn-exportar-c2c" class="btn-exportar">
+          <span class="rotulo-pt">Exportar</span><span class="rotulo-zh">导出</span>
+        </button>
+      </div>
+
+      <section class="painel-resumo painel-resumo-tickets" id="painel-resumo-c2c">
+        <div class="resumo-card resumo-tk-hoje">
+          <span class="resumo-numero" id="c2c-hoje">0</span>
+          <span class="resumo-label"><span class="rotulo-pt">pedidos hoje</span><span class="rotulo-zh">今日订单</span></span>
+        </div>
+        <div class="resumo-card resumo-tk-planej" id="card-c2c-evolucao">
+          <span class="resumo-numero" id="c2c-evolucao">–</span>
+          <span class="resumo-label"><span class="rotulo-pt">evolução vs. ontem</span><span class="rotulo-zh">较昨日变化</span></span>
+        </div>
+        <div class="resumo-card resumo-tk-hoje">
+          <span class="resumo-numero" id="c2c-total">0</span>
+          <span class="resumo-label"><span class="rotulo-pt">total no período</span><span class="rotulo-zh">期间总量</span></span>
+        </div>
+        <div class="resumo-card resumo-tk-vencido">
+          <span class="resumo-numero" id="c2c-fora">0</span>
+          <span class="resumo-label"><span class="rotulo-pt">fora do prazo</span><span class="rotulo-zh">已超期</span></span>
+        </div>
+        <div class="resumo-card resumo-tk-planej">
+          <span class="resumo-numero" id="c2c-sem-prazo">0</span>
+          <span class="resumo-label"><span class="rotulo-pt">sem prazo calculado</span><span class="rotulo-zh">无法计算期限</span></span>
+        </div>
+        <div class="resumo-card resumo-tk-taxa" id="card-c2c-taxa">
+          <span class="resumo-numero" id="c2c-taxa">–</span>
+          <span class="resumo-label"><span class="rotulo-pt">taxa no prazo</span><span class="rotulo-zh">按时率</span></span>
+        </div>
+      </section>
+
+      <div class="taxas-grafico-caixa dropoff-grafico-caixa-mensal">
+        <div class="taxas-grafico-titulo">
+          <span class="rotulo-pt">Referência mensal</span><span class="rotulo-zh">月度参考</span>
+        </div>
+        <div id="c2c-grafico-mensal"></div>
+      </div>
+
+      <div class="dropoff-colunas dropoff-colunas-c2c">
+        <div class="taxas-matriz-caixa dropoff-gauge-caixa">
+          <div class="taxas-grafico-titulo"><span class="rotulo-pt">Meta x Realizado (hoje)</span><span class="rotulo-zh">今日目标达成</span></div>
+          <div class="dropoff-gauge-conteudo">
+            <div id="c2c-gauge"></div>
+            <div class="dropoff-gauge-legenda">
+              <span id="c2c-gauge-atual">–</span><span class="rotulo-pt">atual</span><span class="rotulo-zh">当前</span>
+              <span class="dropoff-gauge-separador">|</span>
+              <span id="c2c-gauge-meta">200</span><span class="rotulo-pt">meta</span><span class="rotulo-zh">目标</span>
+            </div>
+          </div>
+        </div>
+        <div class="taxas-matriz-caixa dropoff-lista-caixa">
+          <div class="taxas-grafico-titulo"><span class="rotulo-pt">Por UF de destino</span><span class="rotulo-zh">按目的省份</span></div>
+          <div id="c2c-por-uf" class="dropoff-lista"></div>
+        </div>
+        <div class="taxas-matriz-caixa dropoff-lista-caixa">
+          <div class="taxas-grafico-titulo"><span class="rotulo-pt">Origem do pedido</span><span class="rotulo-zh">订单来源</span></div>
+          <div id="c2c-por-origem" class="dropoff-lista"></div>
+        </div>
+        <div class="taxas-matriz-caixa dropoff-lista-caixa">
+          <div class="taxas-grafico-titulo"><span class="rotulo-pt">Por base</span><span class="rotulo-zh">按网点</span></div>
+          <div id="c2c-por-base" class="dropoff-lista"></div>
+        </div>
+      </div>
+
+      <div id="tabela-c2c" class="tabela"></div>
+    </section>
+
+  </section>
+
+</main>
+
+<div id="modal-pacotes-overlay" class="modal-overlay" hidden>
+  <div class="modal-caixa">
+    <div class="modal-cabecalho">
+      <div>
+        <div id="modal-titulo" class="modal-titulo">—</div>
+        <div id="modal-subtitulo" class="modal-subtitulo"></div>
+      </div>
+      <div class="modal-acoes">
+        <button id="modal-exportar" class="btn-exportar" hidden>
+          <span class="rotulo-pt">Exportar</span><span class="rotulo-zh">导出</span>
+        </button>
+        <button id="modal-fechar" class="modal-fechar" title="Fechar / 关闭">&times;</button>
+      </div>
+    </div>
+    <div class="modal-corpo">
+      <div id="modal-carregando" class="modal-status">
+        <span class="rotulo-pt">Carregando pacotes da viagem...</span>
+        <span class="rotulo-zh">正在加载班次包裹…</span>
+      </div>
+      <div id="modal-erro" class="modal-status modal-status-erro" hidden></div>
+      <div id="modal-resumo" class="modal-resumo" hidden></div>
+      <div id="tabela-pacotes-detalhe" class="tabela-modal" hidden></div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-ciclo-overlay" class="modal-overlay" hidden>
+  <div class="modal-caixa modal-caixa-estreita">
+    <div class="modal-cabecalho">
+      <div>
+        <div class="modal-titulo">Histórico do ciclo automático</div>
+        <div class="modal-subtitulo">Últimas execuções do ETL (run.py) via Task Scheduler / 自动周期历史</div>
+      </div>
+      <button id="modal-ciclo-fechar" class="modal-fechar" title="Fechar / 关闭">&times;</button>
+    </div>
+    <div class="modal-corpo">
+      <div id="tabela-ciclo" class="tabela-modal"></div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-extracao-taxas-overlay" class="modal-overlay" hidden>
+  <div class="modal-caixa modal-caixa-estreita">
+    <div class="modal-cabecalho">
+      <div>
+        <div class="modal-titulo">Histórico da extração de Taxa de Expedição</div>
+        <div class="modal-subtitulo">Últimas execuções do run_taxas.py via Task Scheduler (a cada 3h) / 提取历史</div>
+      </div>
+      <button id="modal-extracao-taxas-fechar" class="modal-fechar" title="Fechar / 关闭">&times;</button>
+    </div>
+    <div class="modal-corpo">
+      <div id="tabela-extracao-taxas" class="tabela-modal"></div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-extracao-dropoff-overlay" class="modal-overlay" hidden>
+  <div class="modal-caixa modal-caixa-estreita">
+    <div class="modal-cabecalho">
+      <div>
+        <div class="modal-titulo" id="modal-extracao-dropoff-titulo">Histórico da extração</div>
+        <div class="modal-subtitulo">Últimas execuções via Task Scheduler / 提取历史</div>
+      </div>
+      <button id="modal-extracao-dropoff-fechar" class="modal-fechar" title="Fechar / 关闭">&times;</button>
+    </div>
+    <div class="modal-corpo">
+      <div id="tabela-extracao-dropoff" class="tabela-modal"></div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-usuarios-overlay" class="modal-overlay" hidden>
+  <div class="modal-caixa modal-caixa-estreita">
+    <div class="modal-cabecalho">
+      <div>
+        <div class="modal-titulo">Administração de contas</div>
+        <div class="modal-subtitulo">Login = número de funcionário, senha = padrão fixo / 账户管理</div>
+      </div>
+      <button id="modal-usuarios-fechar" class="modal-fechar" title="Fechar / 关闭">&times;</button>
+    </div>
+    <div class="modal-corpo">
+      <form id="form-novo-usuario" class="form-novo-usuario">
+        <input type="text" id="novo-usuario-numero" placeholder="Número do funcionário" inputmode="numeric" required>
+        <input type="text" id="novo-usuario-nome" placeholder="Nome (opcional)">
+        <button type="submit">
+          <span class="rotulo-pt">Adicionar</span><span class="rotulo-zh">添加</span>
+        </button>
+      </form>
+      <div id="usuarios-mensagem" class="usuarios-mensagem" hidden></div>
+      <div id="tabela-usuarios" class="tabela-modal"></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js?v={{V_JS}}"></script>
+</body>
+</html>

@@ -1,0 +1,947 @@
+:root {
+  --bg: #14161a;
+  --bg-elevado: #1c1f24;
+  --borda: #2a2e35;
+  --texto: #e6e8eb;
+  --texto-muted: #8b909a;
+  --texto-muted2: #6a7078;
+  --vermelho: #e0363f;
+  --amarelo: #d9a441;
+  --verde: #3fb56f;
+  --azul: #4a90d9;
+  --roxo: #9b6fe0;
+  --laranja: #e08a3f;
+}
+
+* { box-sizing: border-box; }
+
+[hidden] { display: none !important; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--texto);
+  font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  /* Coluna preenchendo a viewport inteira -- o .conteudo abaixo cresce pra
+     ocupar o que sobrar depois do header, e a tabela cresce dentro dele,
+     em vez de altura fixa em vh que sobra espaco em branco no rodape. */
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.rotulo-zh {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--texto-muted2);
+  line-height: 1.3;
+  margin-top: 1px;
+}
+.aba-relatorio .rotulo-zh,
+.etapa-botao .rotulo-zh,
+.btn-exportar .rotulo-zh,
+.toggle-texto .rotulo-zh,
+.badge-filtrados .rotulo-zh { text-align: center; }
+.aba-relatorio.ativa .rotulo-zh,
+.etapa-botao.ativa .rotulo-zh,
+.btn-exportar .rotulo-zh { color: rgba(255,255,255,0.75); }
+
+.topo {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 10px 20px;
+  background: linear-gradient(90deg, #1a0e0e, #241214);
+  border-bottom: 2px solid var(--vermelho);
+  flex: 0 0 auto;
+}
+
+/* Logo = botão de "voltar ao menu". title/aria explicam; hover deixa claro. */
+.topo-marca { font-size: 22px; background: transparent; border: 0; cursor: pointer; padding: 4px 6px; margin-left: -6px; border-radius: 6px; font-family: inherit; transition: background 0.12s ease; }
+.topo-marca:hover { background: rgba(255, 255, 255, 0.06); }
+.topo-marca-nome { font-weight: 800; color: var(--texto); }
+.topo-marca-sul { font-weight: 800; color: var(--vermelho); margin-left: 2px; }
+
+.topo-abas { display: flex; gap: 8px; }
+
+.aba-relatorio {
+  background: transparent;
+  border: 1px solid var(--borda);
+  color: var(--texto-muted);
+  padding: 6px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.25;
+}
+.aba-relatorio .rotulo-pt { display: block; }
+.aba-relatorio.ativa { background: var(--vermelho); color: #fff; border-color: var(--vermelho); }
+.aba-relatorio.aba-alerta.ativa { background: var(--amarelo); border-color: var(--amarelo); color: #201800; }
+
+.topo-status { display: flex; align-items: center; gap: 8px; color: var(--texto-muted); font-size: 12px; margin-left: auto; }
+
+.badge-relogio, .badge-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-elevado);
+  border: 1px solid var(--borda);
+  border-radius: 20px;
+  padding: 5px 12px;
+  line-height: 1.2;
+}
+.badge-relogio svg { color: var(--texto-muted); flex-shrink: 0; }
+.badge-status .rotulo-zh { text-align: left; margin-top: 0; }
+
+.badge-ciclo {
+  font-family: inherit;
+  cursor: pointer;
+  color: var(--texto-muted);
+}
+.badge-ciclo:hover { border-color: var(--texto-muted); }
+.ciclo-ponto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--texto-muted2); /* neutro ate' a 1a resposta da API */
+}
+.ciclo-ponto.ok { background: var(--verde); }
+.ciclo-ponto.erro { background: var(--vermelho); }
+.ciclo-ponto.atrasado { background: var(--amarelo); }
+
+.btn-atualizar {
+  background: var(--bg-elevado);
+  border: 1px solid var(--borda);
+  color: var(--texto);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: transform 0.4s ease;
+}
+.btn-atualizar:active { transform: rotate(180deg); }
+
+.conteudo {
+  padding: 16px 20px;
+  flex: 1 1 auto;
+  min-height: 0; /* sem isso um filho flex nao encolhe abaixo do conteudo, e o overflow do body nunca dispara */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.barra-filtros {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  flex: 0 0 auto;
+}
+
+#filtro-texto, #filtro-estado {
+  background: var(--bg-elevado);
+  border: 1px solid var(--borda);
+  color: var(--texto);
+  padding: 7px 10px;
+  border-radius: 6px;
+}
+/* flex-basis pequeno (nao flex:1 puro) -- com varios controles na mesma
+   barra, um flex:1 sem limite crescia demais numa linha e empurrava o
+   toggle "Com Carga" pra fora da area visivel em vez de quebrar linha. */
+#filtro-texto { flex: 1 1 200px; max-width: 320px; }
+
+.toggle-carga {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  background: var(--bg-elevado);
+  border: 1px solid var(--borda);
+  border-radius: 20px;
+  padding: 5px 12px 5px 6px;
+}
+.toggle-carga input { display: none; }
+.toggle-trilho {
+  width: 34px;
+  height: 18px;
+  background: #3a3f47;
+  border-radius: 10px;
+  position: relative;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+.toggle-bola {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border-radius: 50%;
+  transition: left 0.2s ease;
+}
+.toggle-carga input:checked + .toggle-trilho { background: var(--azul); }
+.toggle-carga input:checked + .toggle-trilho .toggle-bola { left: 18px; }
+.toggle-texto { line-height: 1.2; }
+.toggle-texto .rotulo-pt { font-size: 13px; font-weight: 600; }
+
+.etapas { display: flex; gap: 6px; flex-wrap: wrap; }
+.etapa-botao {
+  background: var(--bg-elevado);
+  border: 1px solid var(--borda);
+  color: var(--texto-muted);
+  padding: 5px 12px;
+  border-radius: 16px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1.3;
+  text-align: center;
+}
+.etapa-botao .rotulo-pt { display: block; }
+.etapa-botao.ativa { color: #fff; }
+.etapa-botao[data-etapa=""].ativa { background: var(--azul); border-color: var(--azul); }
+.etapa-botao[data-etapa="Planejado"].ativa { background: #565c66; border-color: #565c66; }
+.etapa-botao[data-etapa="Carregando"].ativa { background: var(--amarelo); border-color: var(--amarelo); color: #201800; }
+.etapa-botao[data-etapa="Em Trânsito"].ativa { background: var(--azul); border-color: var(--azul); }
+.etapa-botao[data-etapa="Em Descarregamento"].ativa { background: var(--roxo); border-color: var(--roxo); }
+.etapa-botao[data-etapa="Concluído"].ativa { background: var(--verde); border-color: var(--verde); }
+.etapa-botao[data-etapa="Cancelado"].ativa { background: #6a4040; border-color: #6a4040; }
+
+.badge-filtrados {
+  background: var(--bg-elevado);
+  border: 1px solid var(--borda);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--texto-muted);
+  white-space: nowrap;
+}
+.badge-filtrados #contagem-filtrados { color: var(--texto); font-weight: 700; }
+.badge-filtrados .rotulo-zh { display: inline; margin: 0 0 0 3px; font-size: 10px; }
+
+.btn-exportar {
+  background: var(--verde);
+  border: none;
+  color: #06210f;
+  font-weight: 700;
+  padding: 7px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+  line-height: 1.2;
+}
+.btn-exportar .rotulo-pt { display: block; }
+.btn-exportar .rotulo-zh { color: #06210fbb; }
+
+.painel-resumo { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; flex: 0 0 auto; }
+.btn-exportar-candidatos { margin-left: auto; align-self: center; }
+.resumo-card {
+  background: var(--bg-elevado);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  padding: 14px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 220px;
+}
+.resumo-critico { border-left: 4px solid var(--vermelho); }
+.resumo-urgente { border-left: 4px solid var(--amarelo); }
+.resumo-prioridade { border-left: 4px solid var(--azul); }
+.resumo-vencido { border-left: 4px solid var(--texto-muted2); }
+.resumo-vencido .resumo-numero { color: var(--texto-muted); }
+.resumo-numero { font-size: 28px; font-weight: 800; }
+.resumo-label { color: var(--texto-muted); font-size: 12px; line-height: 1.3; }
+.resumo-label .rotulo-zh { margin-top: 2px; }
+
+.tabela {
+  background: var(--bg-elevado);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  overflow: hidden;
+  flex: 1 1 auto; /* preenche o resto vertical do .conteudo -- ver height:"100%" no Tabulator em app.js */
+  min-height: 0;
+}
+
+/* --- Menu inicial + módulos (2026-09-10) ------------------------------- */
+/* Depois do login o painel abre no menu (#tela-inicio) com blocos; clicar
+   num bloco troca a URL (#/transporte, #/indicadores...) e mostra o
+   .modulo correspondente. Cada .modulo reproduz o flex-column do
+   .conteudo pra as tabelas continuarem preenchendo a altura. */
+.tela-inicio {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: 40px 20px;
+}
+.inicio-cabecalho { text-align: center; }
+.inicio-cabecalho h1 { margin: 0 0 6px; font-size: 20px; color: var(--texto); }
+.inicio-cabecalho h1 .rotulo-zh { font-size: 12px; color: var(--texto-muted2); margin-top: 2px; }
+.inicio-cabecalho p { margin: 0; color: var(--texto-muted); font-size: 13px; }
+.inicio-cabecalho p .rotulo-zh { font-size: 11px; }
+
+.modulos-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  justify-content: center;
+  max-width: 860px;
+}
+.modulo-bloco {
+  width: 240px;
+  min-height: 190px;
+  background: var(--bg-elevado);
+  border: 1px solid var(--borda);
+  border-radius: 12px;
+  padding: 24px 20px;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+.modulo-bloco:hover {
+  transform: translateY(-3px);
+  border-color: var(--vermelho);
+  background: #20242b;
+}
+.modulo-icone { color: var(--vermelho); }
+.modulo-nome { font-size: 16px; font-weight: 700; color: var(--texto); }
+.modulo-desc { font-size: 11px; color: var(--texto-muted); line-height: 1.4; }
+.modulo-desc .rotulo-zh { display: block; color: var(--texto-muted2); margin-top: 3px; }
+
+.modulo {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* --- Aba "Taxa de Expedição" (2026-09-10) ------------------------------- */
+/* Ao contrario das outras abas (uma tabela unica que preenche a tela), esta
+   empilha KPIs + grafico + matriz -- entao rola por dentro em vez de deixar
+   o .conteudo (overflow:hidden) cortar. */
+.painel-taxas {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-right: 4px;
+}
+
+.taxas-controles { display: flex; align-items: stretch; gap: 26px; flex-wrap: wrap; flex: 0 0 auto; }
+.taxas-indicadores, .taxas-granularidade { display: flex; gap: 10px; align-items: stretch; }
+/* separador leve entre "qual indicador" e "qual granularidade" */
+.taxas-granularidade { padding-left: 26px; border-left: 1px solid var(--borda); }
+.taxa-ind, .taxa-gran {
+  background: var(--bg-elevado);
+  border: 1px solid var(--borda);
+  color: var(--texto-muted);
+  padding: 9px 20px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1.2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.taxa-ind:hover, .taxa-gran:hover { border-color: var(--texto-muted); }
+.taxa-ind .rotulo-zh, .taxa-gran .rotulo-zh { display: block; font-size: 11px; margin-top: 3px; }
+.taxa-ind.ativa { background: var(--azul); border-color: var(--azul); color: #fff; }
+.taxa-gran.ativa { background: var(--texto); border-color: var(--texto); color: var(--bg); }
+.taxa-gran { padding: 9px 18px; }
+.taxa-meta-badge {
+  display: flex;
+  align-items: center;
+  background: var(--bg-elevado);
+  border: 1px solid var(--borda);
+  border-radius: 7px;
+  padding: 8px 15px;
+  font-size: 13px;
+  color: var(--texto-muted);
+}
+.taxa-meta-badge strong { color: var(--texto); font-size: 15px; }
+.taxas-controles #btn-exportar-taxas,
+.taxas-controles #btn-exportar-pudo,
+.taxas-controles #btn-exportar-c2c { margin-left: auto; align-self: center; }
+/* "fixo no canto superior direito" (2026-09-15) -- .taxas-controles fica
+   sticky no topo do .painel-taxas (que rola por dentro, overflow-y:auto),
+   entao o botao de exportar (empurrado pra direita acima) nunca sai de
+   vista rolando a tela pra baixo. z-index/bg proprios pra nao ficar
+   transparente sobre o conteudo passando por baixo. */
+.painel-taxas > .taxas-controles {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg);
+  padding-top: 2px;
+  padding-bottom: 8px;
+}
+
+/* cards esticam pra ocupar a linha inteira (4 iguais), sem espaço morto à
+   direita; em tela estreita quebram pra 2x2 em vez de espremer. */
+.painel-resumo-taxas { margin-bottom: 0; flex-wrap: wrap; flex: 0 0 auto; gap: 12px; }
+.resumo-taxa {
+  border-left: 4px solid var(--borda);
+  flex: 1 1 220px;
+  min-width: 200px;
+  padding: 14px 18px;
+}
+.resumo-taxa .resumo-numero { font-size: 34px; }
+.resumo-taxa .resumo-label { font-size: 13px; }
+.resumo-taxa .resumo-label .rotulo-zh { font-size: 12px; }
+.resumo-taxa.acima .resumo-numero { color: var(--verde); }
+.resumo-taxa.acima { border-left-color: var(--verde); }
+.resumo-taxa.abaixo .resumo-numero { color: var(--vermelho); }
+.resumo-taxa.abaixo { border-left-color: var(--vermelho); }
+
+/* gráfico e matriz dividem TODO o espaço vertical que sobra -- nada de caixa
+   meio vazia. O SVG do gráfico é gerado pra preencher a caixa nos dois
+   eixos (ver renderGraficoTaxas + ResizeObserver). */
+.taxas-grafico-caixa, .taxas-matriz-caixa {
+  background: var(--bg-elevado);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
+}
+.taxas-grafico-caixa { flex: 1 1 0; min-height: 210px; }
+.taxas-matriz-caixa { flex: 1.25 1 0; }
+.taxas-grafico-titulo { font-size: 13px; color: var(--texto-muted); margin-bottom: 8px; flex: 0 0 auto; }
+/* icone "(i)" de ajuda ao lado de um titulo -- 2026-09-17, "C2C por Pudo"
+   (explica a limitacao de cobertura via title/tooltip nativo do navegador). */
+.dropoff-info-tooltip { cursor: help; color: var(--texto-muted); margin-left: 4px; font-size: 12px; }
+.taxas-grafico-titulo .rotulo-zh { margin-left: 6px; font-size: 12px; }
+#taxas-grafico, #pudo-grafico, #pudo-grafico-mensal, #c2c-grafico-mensal { width: 100%; flex: 1 1 auto; min-height: 0; overflow-x: auto; overflow-y: hidden; }
+#taxas-grafico svg, #pudo-grafico svg, #pudo-grafico-mensal svg, #c2c-grafico-mensal svg { display: block; }
+#taxas-grafico .grade, #pudo-grafico .grade, #pudo-grafico-mensal .grade, #c2c-grafico-mensal .grade { stroke: var(--borda); stroke-width: 1; }
+#taxas-grafico .meta-linha { stroke: var(--amarelo); stroke-width: 1.5; stroke-dasharray: 5 4; }
+#taxas-grafico .serie { fill: none; stroke: var(--azul); stroke-width: 2.5; }
+#taxas-grafico .ponto { fill: var(--azul); }
+#taxas-grafico .ponto.abaixo { fill: var(--vermelho); }
+#taxas-grafico .eixo-texto, #pudo-grafico .eixo-texto, #pudo-grafico-mensal .eixo-texto, #c2c-grafico-mensal .eixo-texto { fill: var(--texto-muted2); font-size: 12px; }
+#pudo-grafico .barra-pudo, #pudo-grafico-mensal .barra-pudo, #c2c-grafico-mensal .barra-pudo { fill: var(--azul); }
+/* rotulo do valor em cima de cada barra (pedido do usuario 2026-09-17) --
+   mais claro/forte que o eixo-texto normal (esse e' o dado principal, nao
+   so' uma marcação de eixo) pra ler sem precisar contar linha de grade. */
+#pudo-grafico .barra-rotulo, #pudo-grafico-mensal .barra-rotulo, #c2c-grafico-mensal .barra-rotulo {
+  fill: var(--texto);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.taxas-matriz-scroll { overflow: auto; flex: 1 1 auto; min-height: 0; }
+table.taxas-matriz {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13.5px;
+}
+table.taxas-matriz th, table.taxas-matriz td {
+  border: 1px solid var(--borda);
+  padding: 9px 12px;
+  text-align: center;
+  white-space: nowrap;
+}
+table.taxas-matriz thead th {
+  background: var(--bg);
+  color: var(--texto-muted);
+  position: sticky;
+  top: 0;
+  font-size: 13px;
+}
+table.taxas-matriz td.rota {
+  text-align: left;
+  color: var(--texto);
+  position: sticky;
+  left: 0;
+  background: var(--bg-elevado);
+  font-weight: 600;
+}
+table.taxas-matriz tr.rodape td { font-weight: 800; background: var(--bg); }
+table.taxas-matriz td.rodape-lbl { text-align: left; position: sticky; left: 0; background: var(--bg); }
+table.taxas-matriz td.geral { border-left: 2px solid var(--borda); font-weight: 700; }
+.celula-taxa { display: block; font-weight: 700; font-size: 14px; }
+.celula-vol { display: block; font-size: 11.5px; color: var(--texto-muted2); font-weight: 400; margin-top: 1px; }
+td.taxa-verde { background: rgba(63, 181, 111, 0.16); }
+td.taxa-verde .celula-taxa { color: var(--verde); }
+td.taxa-vermelho { background: rgba(224, 54, 63, 0.16); }
+td.taxa-vermelho .celula-taxa { color: var(--vermelho); }
+td.taxa-vazia { color: var(--texto-muted2); }
+
+/* --- Módulo "Tickets" (2026-09-10) ------------------------------------- */
+#barra-filtros-tickets #filtro-texto-tickets {
+  background: var(--bg-elevado); border: 1px solid var(--borda); color: var(--texto);
+  padding: 7px 10px; border-radius: 6px; flex: 1 1 220px; max-width: 320px;
+}
+#filtro-tickets-priority {
+  background: var(--bg-elevado); border: 1px solid var(--borda); color: var(--texto);
+  padding: 7px 10px; border-radius: 6px;
+}
+.painel-resumo-tickets { flex-wrap: wrap; gap: 12px; }
+.painel-resumo-tickets .resumo-card { flex: 1 1 170px; min-width: 150px; padding: 12px 16px; }
+.painel-resumo-tickets .resumo-numero { font-size: 26px; }
+.painel-resumo-tickets .resumo-label { font-size: 12px; }
+.resumo-tk-critico { border-left: 4px solid var(--vermelho); }
+.resumo-tk-vencido { border-left: 4px solid var(--vermelho); }
+.resumo-tk-vencido .resumo-numero { color: var(--vermelho); }
+.resumo-tk-hoje { border-left: 4px solid var(--amarelo); }
+.resumo-tk-planej { border-left: 4px solid var(--borda); }
+.resumo-tk-taxa { border-left: 4px solid var(--borda); }
+.resumo-tk-taxa.acima { border-left-color: var(--verde); }
+.resumo-tk-taxa.acima .resumo-numero { color: var(--verde); }
+.resumo-tk-taxa.abaixo { border-left-color: var(--vermelho); }
+.resumo-tk-taxa.abaixo .resumo-numero { color: var(--vermelho); }
+
+#card-c2c-evolucao.subiu { border-left-color: var(--verde); }
+#card-c2c-evolucao.subiu .resumo-numero { color: var(--verde); }
+#card-c2c-evolucao.desceu { border-left-color: var(--vermelho); }
+#card-c2c-evolucao.desceu .resumo-numero { color: var(--vermelho); }
+
+.tag-priority {
+  display: inline-block;
+  background: #3a2a12; color: var(--laranja);
+  font-size: 10px; font-weight: 700;
+  padding: 1px 6px; border-radius: 4px; margin-right: 4px;
+}
+
+/* --- Módulo "Dropoff & C2C" (2026-09-11) -------------------------------- */
+/* Pudo = volume altíssimo -- painel de agregados (cards + gráfico + top-N em
+   listinhas de barra), nunca lista bruta inteira. C2C = volume baixo, então
+   segue o padrão normal de tabela com prazo/relógio (igual Tickets). */
+#filtro-texto-c2c.dropoff-input {
+  background: var(--bg-elevado); border: 1px solid var(--borda); color: var(--texto);
+  padding: 7px 10px; border-radius: 6px; flex: 1 1 220px; max-width: 320px;
+}
+.dropoff-grafico-caixa { flex: 0 0 auto; min-height: 220px; }
+/* Gráfico "Referência mensal" (2026-09-15) -- menor que o diário de
+   proposito, cresce devagar (1 mês fechado por vez, ver run_mensal.py).
+   Subido de 160 pra 230px -- achado em 2026-09-15: com os números reais
+   (Pudo na casa do milhão), 160px sobrava só ~88px pro SVG depois do
+   título, deixando a barra achatada demais pra ler direito. */
+.dropoff-grafico-caixa-mensal { flex: 0 0 auto; min-height: 230px; height: 230px; }
+
+.dropoff-colunas { display: flex; gap: 14px; flex-wrap: wrap; flex: 1 1 auto; min-height: 220px; }
+/* no C2C a tabela de prazos é o conteúdo principal -- as listas ficam com
+   altura fixa (2026-09-14: subida de 150px pra 260px -- 150px cortava
+   "Origem do pedido" no meio da lista assim que passou de ~6 origens
+   diferentes), com scroll próprio (.dropoff-lista já rola), em vez de
+   disputar espaço ilimitado com a tabela. */
+.dropoff-colunas-c2c { flex: 0 0 auto; min-height: 0; height: 260px; }
+/* height:100% (nao so' flex-grow) -- achado em 2026-09-14: com o container
+   pai em altura FIXA (260px), os filhos flex (mesmo com min-height:0 em
+   toda a cadeia) ficavam esticando pro tamanho do CONTEUDO em vez de
+   respeitar os 260px (caixa chegou a medir 1491px, empurrando tudo pra
+   fora da tela) -- so' um height explicito de 100% forcou o motor de flex
+   a resolver certo. So' aplica aqui (pai com altura fixa); o Pudo usa
+   .dropoff-colunas sem altura fixa, ali flex-grow sozinho já funciona. */
+.dropoff-colunas-c2c .dropoff-lista-caixa,
+.dropoff-colunas-c2c .dropoff-gauge-caixa { flex: 1 1 240px; height: 100%; }
+/* #tabela-c2c fica dentro de .painel-taxas (overflow-y:auto, pensado pra
+   paginas so' de KPI+grafico -- nao tem outra tabela grande igual essa em
+   nenhuma outra aba que usa .painel-taxas). Sem chao proprio de altura,
+   .tabela (flex:1 1 auto; min-height:0 -- regra geral, linha 267) fica
+   espremida quase a 0px pelos irmaos de cima (filtros, cards, gauge,
+   listas) em vez de flex-growar de verdade -- achado em 2026-09-14. Um
+   minimo garantido aqui resolve sem mexer na regra geral de .tabela (usada
+   por Troncal/Secundaria/Tickets/Candidatos tambem).
+   min-height so' evita a caixa colapsar antes do Tabulator montar -- quem
+   realmente fixa a altura interna (tabulator-tableholder) e' o height:"50vh"
+   passado na criacao do Tabulator em app.js (achado em 2026-09-15: dentro
+   de um ancestral que rola por dentro, height:"100%" deixava o holder
+   interno curto demais pras linhas, ver comentario la'). */
+#tabela-c2c { min-height: 400px; }
+/* min-height:0 e' essencial aqui -- sem isso o item flex (mesmo dentro de
+   um container de altura fixa) cresce pro tamanho do CONTEUDO em vez de
+   respeitar o espaco disponivel e deixar .dropoff-lista rolar por dentro
+   (achado em 2026-09-14: caixa cresceu pra 1491px de altura, empurrando o
+   gauge/listas pra fora da tela -- classico "min-height:auto" de flex item). */
+.dropoff-lista-caixa { flex: 1 1 280px; min-width: 240px; min-height: 0; display: flex; flex-direction: column; }
+/* padding-right (2026-09-17) -- sem folga aqui o conteudo (numero/barra)
+   fica colado na barra de rolagem quando a lista precisa rolar, feio
+   visualmente (achado pelo usuario em "Por UF de destino"/"Por base"). */
+.dropoff-lista { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 10px; }
+
+/* "Status dos pacotes" (donut) + "C2C por Pudo" (barra horizontal) --
+   2026-09-17, linha propria porque tem muito menos itens que Por
+   cidade/Por Pudo/Origem (sobrava espaco vazio do lado das listas longas,
+   layout desequilibrado). "C2C por Pudo" veio do painel C2C pro Pudo nesse
+   mesmo dia -- a consulta filtra por enter_time do Pudo, entao faz mais
+   sentido junto do resto do painel Pudo. */
+.dropoff-colunas-secundarias { display: flex; gap: 14px; flex-wrap: wrap; flex: 0 0 auto; min-height: 200px; }
+.dropoff-donut-caixa { flex: 1 1 320px; min-width: 280px; min-height: 0; display: flex; flex-direction: column; }
+.dropoff-barrah-caixa { flex: 2 1 480px; min-width: 320px; min-height: 0; display: flex; flex-direction: column; }
+.dropoff-donut { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; }
+.dropoff-barrah { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 10px; }
+
+.donut-wrap { display: flex; align-items: center; gap: 18px; width: 100%; }
+.donut-svg { flex: 0 0 auto; width: 140px; height: 140px; }
+.donut-total { font-size: 22px; font-weight: 700; fill: var(--texto); }
+.donut-total-label { font-size: 10px; fill: var(--texto-muted); }
+.donut-legenda { flex: 1 1 auto; display: flex; flex-direction: column; gap: 7px; font-size: 12.5px; min-width: 0; }
+.donut-legenda-item { display: flex; align-items: center; gap: 7px; color: var(--texto); }
+.donut-legenda-item strong { margin-left: auto; padding-left: 8px; }
+.donut-cor { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+.donut-pct { color: var(--texto-muted); font-size: 11px; }
+
+/* barra horizontal generica (grafico SVG, nao presa a um container com ID
+   especifico como .eixo-texto -- reaproveitavel em qualquer lista-ranking
+   que precise virar "grafico de barra" em vez de lista+linha fina). */
+.grafico-barrah-rotulo { fill: var(--texto); font-size: 12px; }
+.grafico-barrah-valor { fill: var(--texto-muted); font-size: 11.5px; font-weight: 700; }
+
+/* Filtro de período (De/Até) -- Pudo e C2C, 2026-09-14. Travado no dia de
+   hoje por padrão desde 2026-09-15 (igual o LMS); usuário troca manualmente
+   se quiser outro dia/intervalo -- ver hojeISO() em app.js. */
+.filtro-periodo { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.filtro-periodo label {
+  display: flex; flex-direction: column; gap: 2px;
+  font-size: 11px; color: var(--texto-muted);
+}
+.filtro-periodo input[type="date"] {
+  background: var(--bg-elevado); border: 1px solid var(--borda); color: var(--texto);
+  padding: 6px 8px; border-radius: 6px; font-size: 13px; color-scheme: dark;
+}
+
+/* Gauge "Meta x Realizado" (C2C, 2026-09-14) -- caixa do mesmo tamanho das
+   listas ao lado, mas o conteúdo é o SVG do arco + legenda centralizados. */
+.dropoff-gauge-caixa { flex: 1 1 240px; min-width: 220px; min-height: 0; }
+.dropoff-gauge-conteudo { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+.dropoff-gauge-conteudo svg { max-width: 100%; }
+.dropoff-gauge-legenda { display: flex; align-items: baseline; gap: 6px; font-size: 12.5px; color: var(--texto-muted); }
+.dropoff-gauge-legenda span:first-child, .dropoff-gauge-legenda #c2c-gauge-meta { font-weight: 700; color: var(--texto); font-size: 15px; }
+.dropoff-gauge-separador { color: var(--borda); }
+.dropoff-linha { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 10px; font-size: 12.5px; }
+.dropoff-linha-rotulo { color: var(--texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dropoff-linha-valor { color: var(--texto-muted); font-weight: 700; text-align: right; }
+.dropoff-linha-barra { grid-column: 1 / -1; height: 5px; border-radius: 3px; background: var(--borda); overflow: hidden; }
+.dropoff-linha-barra > div { height: 100%; background: var(--azul); border-radius: 3px; }
+
+.tabulator .tabulator-col-title {
+  white-space: normal !important;
+  line-height: 1.25;
+  text-align: center;
+  /* min-height (2026-09-17, pedido do usuario) -- titulos bilingues PT/ZH
+     variam de 2 pra 3 linhas dependendo se o texto PT precisa quebrar
+     dentro da largura da coluna (ex: "Tipo Última Operação" quebra,
+     "Status" nao) -- sem altura minima igual pra todas, a linha de
+     filtro logo abaixo (tabulator-header-filter) fica empurrada pra
+     baixo so' nas colunas com titulo mais longo, saindo desalinhada das
+     outras. Altura fixa suficiente pro pior caso (3 linhas) resolve sem
+     depender de medir cada titulo -- as colunas com titulo curto so'
+     ficam com um respiro a mais em cima do filtro, nao afeta a leitura. */
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.titulo-coluna-pt {
+  display: block;
+  font-size: 12px;
+}
+.titulo-coluna-zh {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--texto-muted2);
+  margin-top: 1px;
+}
+
+.etapa-pill {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-block;
+  line-height: 1.35;
+  text-align: center;
+}
+.etapa-pill .pill-zh { display: block; font-size: 9px; font-weight: 500; opacity: 0.85; }
+.etapa-Planejado { background: #2a2e35; color: var(--texto-muted); }
+.etapa-Carregando { background: #2d2a12; color: var(--amarelo); }
+.etapa-Em-Trânsito { background: #12242d; color: var(--azul); }
+.etapa-Em-Descarregamento { background: #221a30; color: var(--roxo); }
+.etapa-Concluído { background: #12281a; color: var(--verde); }
+.etapa-Cancelado { background: #2a1414; color: var(--texto-muted); }
+
+.barra-progresso {
+  position: relative;
+  background: #2a2e35;
+  border-radius: 6px;
+  height: 16px;
+  width: 100%;
+  overflow: hidden;
+}
+.barra-progresso-preenchimento {
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  background: var(--verde);
+  border-radius: 6px;
+}
+/* excedido (2026-09-18) -- "Processado" > "Carga" (pacote voando na propria
+   viagem); a barra fica cheia (100%) mas em amarelo em vez de verde, pra
+   diferenciar de um "100% normal" so' olhando a tabela. */
+.barra-progresso-preenchimento.excedido {
+  background: var(--amarelo);
+}
+.barra-progresso-texto {
+  position: relative;
+  z-index: 1;
+  display: block;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  /* Branco com halo escuro em vez de mix-blend-mode -- o texto ficava
+     verde sobre o preenchimento verde conforme ele avancava, some no
+     fundo. Halo garante contraste tanto no trilho escuro quanto no
+     preenchimento verde. */
+  color: #fff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.85), 0 0 4px rgba(0, 0, 0, 0.6);
+}
+
+.tempo-critico { color: var(--vermelho); font-weight: 700; }
+.tempo-atencao { color: var(--amarelo); font-weight: 700; }
+.tempo-ok { color: var(--verde); }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 30px;
+}
+.modal-caixa {
+  background: var(--bg-elevado);
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  width: 100%;
+  max-width: 1100px;
+  /* vh em vez de % -- % de um ancestral fixed/flex aninhado nao resolve de
+     forma confiavel pro Tabulator calcular a altura interna dele (visto na
+     pratica em 2026-08-30: tabulator-tableholder ficou com 2700px em vez
+     dos ~500px disponiveis, cortando as linhas de baixo sem scroll). vh
+     e' sempre relativo a viewport direto, sem essa ambiguidade. */
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal-caixa-estreita { max-width: 800px; }
+.modal-cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--borda);
+  flex: 0 0 auto;
+}
+.modal-acoes { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+.modal-titulo { font-size: 16px; font-weight: 700; }
+.modal-subtitulo { font-size: 12px; color: var(--texto-muted); margin-top: 3px; }
+.modal-fechar {
+  background: transparent;
+  border: none;
+  color: var(--texto-muted);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+.modal-fechar:hover { background: var(--borda); color: var(--texto); }
+.modal-corpo {
+  padding: 16px 20px;
+  overflow-y: auto; /* rede de seguranca -- se algo ainda nao couber, o corpo do modal rola sozinho */
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+  flex: 1 1 auto;
+}
+.modal-status {
+  text-align: center;
+  color: var(--texto-muted);
+  padding: 30px 10px;
+  line-height: 1.6;
+}
+.modal-status-erro { color: var(--vermelho); }
+.modal-resumo {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  flex: 0 0 auto;
+}
+.modal-resumo-item {
+  background: var(--bg);
+  border: 1px solid var(--borda);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--texto-muted);
+  white-space: nowrap;
+}
+.modal-resumo-item strong { color: var(--texto); font-size: 14px; margin-right: 4px; }
+.tabela-modal { height: 55vh; flex: 0 0 auto; }
+
+/* Linhas de Troncal/Secundaria abrem o detalhe de pacotes ao clicar --
+   cursor de mao sinaliza isso (a tabela de candidatos nao tem esse
+   comportamento, so' as duas de viagem). */
+#tabela-pernas .tabulator-row { cursor: pointer; }
+
+/* --- Login proprio do painel (2026-08-31) --- */
+.tela-login {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200; /* acima de qualquer modal -- ninguem deve ver o painel por tras */
+  padding: 20px;
+}
+.login-caixa {
+  background: var(--bg-elevado);
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  width: 100%;
+  max-width: 340px;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.login-marca { font-size: 22px; text-align: center; }
+.login-subtitulo {
+  text-align: center;
+  color: var(--texto-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  margin-top: -8px;
+}
+.login-subtitulo .rotulo-zh { display: block; color: var(--texto-muted2); }
+.login-campo { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--texto-muted); }
+.login-campo input {
+  background: var(--bg);
+  border: 1px solid var(--borda);
+  color: var(--texto);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+.login-campo input:focus { outline: none; border-color: var(--vermelho); }
+.login-lembrar { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--texto-muted); cursor: pointer; }
+.login-erro {
+  background: rgba(224, 54, 63, 0.12);
+  border: 1px solid var(--vermelho);
+  color: var(--vermelho);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.login-botao {
+  background: var(--vermelho);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 11px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.login-botao:hover { filter: brightness(1.08); }
+.login-botao:disabled { opacity: 0.6; cursor: default; }
+
+#badge-usuario { color: var(--texto-muted); }
+#usuario-logado-nome { color: var(--texto); font-weight: 600; }
+
+/* --- Administracao de contas (2026-08-31) --- */
+.form-novo-usuario { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.form-novo-usuario input {
+  background: var(--bg);
+  border: 1px solid var(--borda);
+  color: var(--texto);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+.form-novo-usuario input#novo-usuario-numero { width: 160px; }
+.form-novo-usuario input#novo-usuario-nome { flex: 1 1 160px; }
+.form-novo-usuario button {
+  background: var(--vermelho);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 13px;
+}
+.usuarios-mensagem {
+  background: rgba(63, 181, 111, 0.12);
+  border: 1px solid var(--verde);
+  color: var(--verde);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+.usuarios-mensagem.erro { background: rgba(224, 54, 63, 0.12); border-color: var(--vermelho); color: var(--vermelho); }
+.pill-toggle { cursor: pointer; }
+.pill-sim { background: rgba(63, 181, 111, 0.18); color: var(--verde); }
+.pill-nao { background: rgba(139, 144, 154, 0.18); color: var(--texto-muted); }
+.pill-toggle, .pill-sim, .pill-nao {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.btn-resetar-senha {
+  background: var(--bg-elevado);
+  border: 1px solid var(--borda);
+  color: var(--texto-muted);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.btn-resetar-senha:hover { color: var(--texto); border-color: var(--texto-muted); }
+.btn-excluir-usuario {
+  background: rgba(224, 54, 63, 0.12);
+  border: 1px solid var(--vermelho);
+  color: var(--vermelho);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.btn-excluir-usuario:hover { background: var(--vermelho); color: #fff; }

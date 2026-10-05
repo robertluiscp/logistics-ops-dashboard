@@ -1,0 +1,22 @@
+{
+  "name": "logistics-ops-dashboard-api",
+  "version": "1.0.0",
+  "description": "REST API of the logistics operations dashboard (reads PostgreSQL, serves the static frontend)",
+  "private": true,
+  "license": "MIT",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "create-user": "node scripts/criar_usuario.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.12.0"
+  }
+}

@@ -1,0 +1,38 @@
+# --- segredos e ambiente ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+data/*token*.json
+
+# --- dependencias e artefatos ---
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+dist/
+build/
+
+# --- dados gerados / locais ---
+data/
+!data/.gitkeep
+*.log
+*.xlsx
+*.xls
+*.csv
+*.sqlite
+
+# --- infra local ---
+infra/logs/
+api/src/daemon/
+
+# --- editor / SO ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
