@@ -117,16 +117,6 @@ CREATE INDEX IF NOT EXISTS idx_pacotes_perna ON pacotes (perna_id);
 CREATE INDEX IF NOT EXISTS idx_pacotes_shipment ON pacotes (shipment_no);
 CREATE INDEX IF NOT EXISTS idx_pacotes_candidato_desde ON pacotes (candidato_desde);
 
-CREATE TABLE IF NOT EXISTS historico_status (
-    id             SERIAL PRIMARY KEY,
-    bill_code        TEXT NOT NULL,
-    status_anterior    TEXT,
-    status_novo      TEXT NOT NULL,
-    mudou_em        TIMESTAMP NOT NULL DEFAULT now()
-);
-
-CREATE INDEX IF NOT EXISTS idx_historico_bill_code ON historico_status (bill_code);
-
 -- Log persistente de cada execucao do ETL (etl/src/main.py) -- sem isso,
 -- so' dava pra saber se o ciclo automatico (Task Scheduler, ver
 -- docs/ENGINEERING_NOTES.md) esta' saudavel olhando

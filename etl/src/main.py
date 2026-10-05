@@ -78,6 +78,26 @@ def _montar_registro_pacote(shipment_no, perna_info, resultado, responsavel=None
     }
 
 
+def _podar_pacotes():
+    """Apaga pacotes SEM atividade ha' mais de PACOTES_JANELA_DIAS dias (nem
+    detectados nem atualizados dentro da janela) -- um pacote ainda sendo
+    atualizado nunca e' podado. E' so' retencao: uma falha aqui nunca derruba
+    o ciclo."""
+    try:
+        with db.conexao() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "DELETE FROM pacotes WHERE primeira_deteccao < now() - (%s || ' days')::interval "
+                    "AND atualizado_em < now() - (%s || ' days')::interval",
+                    (config.PACOTES_JANELA_DIAS, config.PACOTES_JANELA_DIAS),
+                )
+                apagados = cur.rowcount
+        if apagados:
+            print(f"  poda: {apagados} pacote(s) sem atividade ha' mais de {config.PACOTES_JANELA_DIAS} dias removido(s)")
+    except Exception as exc:
+        print(f"  aviso: falha na poda de pacotes ({exc})")
+
+
 def _gravar_log_execucao(inicio, fim, erro_mensagem, metricas):
     """1 linha em `execucoes_etl` por execucao (sucesso ou falha) -- da'
     visibilidade de saude do ciclo agendado sem precisar abrir o terminal.
@@ -299,6 +319,8 @@ def _executar_etl_interno(inicio, metricas, fonte):
     with db.conexao() as conn:
         with conn.cursor() as cur:
             db.upsert_muitos(cur, "pacotes", pacotes_para_upsert, "bill_code")
+
+    _podar_pacotes()
 
     candidatos = status_svc.candidatos_perto_do_prazo(pacotes_para_upsert, prazo_limite_por_bill_code)
     metricas["candidatos_perto_prazo"] = len(candidatos)

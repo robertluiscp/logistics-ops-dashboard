@@ -40,6 +40,8 @@ PRAZO_LIMITE_HORAS = int(os.getenv("PRAZO_LIMITE_HORAS", "6"))
 PUDO_JANELA_DIAS = int(os.getenv("PUDO_JANELA_DIAS", "30"))
 C2C_JANELA_DIAS = int(os.getenv("C2C_JANELA_DIAS", "30"))
 TICKET_JANELA_DIAS = int(os.getenv("TICKET_JANELA_DIAS", "15"))
+# `pacotes` tambem e' rolante: poda o que ficou sem atividade alem da janela.
+PACOTES_JANELA_DIAS = int(os.getenv("PACOTES_JANELA_DIAS", "30"))
 
 # SLA de tratamento dos tickets (horas a partir do registro).
 TICKET_SLA_COMUM_HORAS = float(os.getenv("TICKET_SLA_COMUM_HORAS", "24"))

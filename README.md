@@ -64,8 +64,8 @@ indicators, customer-complaint tickets and drop-off / C2C volumes on top.
 - **Cross-process throttle** in one Postgres row: global request spacing +
   concurrency cap + **automatic recovery of leaked slots** from killed processes
   (`etl/src/common/throttle.py`, integration-tested).
-- **Three-tier retention**: rolling detail -> permanent daily totals -> permanent
-  monthly totals, with the daily job needing no upstream calls.
+- **Three-tier retention**: rolling detail (pruned by the jobs themselves) -> permanent
+  daily totals -> permanent monthly totals, with the daily job needing no upstream calls.
 - **Observability by table**: every job logs status, rows written, error and
   duration; a separate job alerts when the main cycle stops.
 - **Security basics done right**: httpOnly signed session cookie, bcrypt,
@@ -80,6 +80,8 @@ indicators, customer-complaint tickets and drop-off / C2C volumes on top.
 
 PostgreSQL - Python 3 (pandas, psycopg2) - Node.js / Express - vanilla JS,
 Tabulator, SVG. ~3k lines Python, ~1.3k Node, ~3.3k frontend, ~500 SQL.
+
+**How the data gets from an existing system into PostgreSQL and out to the UI (extract, load, consume, and the whole ETL):** [`docs/DATA_PIPELINE.md`](docs/DATA_PIPELINE.md).
 
 Architecture diagrams: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 Scheduling and backfill runbook: [`docs/SCHEDULING.md`](docs/SCHEDULING.md).
@@ -240,6 +242,7 @@ etl/
     test_business_rules.py      stage/6h-rule/status/aggregation unit tests
     test_demo_source.py         determinism & consistency of the demo source
     test_throttle_integration.py  throttle behavior against a real PostgreSQL
+    test_retention_integration.py pacotes retention: prunes only idle rows, never live ones
 
 api/
   package.json
@@ -272,6 +275,7 @@ infra/
   watchdog_painel.ps1           job 10 - API/tunnel health check + restart
 
 docs/
+  DATA_PIPELINE.md              extract -> PostgreSQL on localhost -> consume, and the whole ETL
   ARCHITECTURE.md               diagrams: context, arrival logic, retention tiers, security
   ENGINEERING_NOTES.md          9 real incidents and what each one taught
   SCHEDULING.md                 cadence table, cron/Windows examples, backfill commands

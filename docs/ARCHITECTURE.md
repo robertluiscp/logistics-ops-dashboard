@@ -73,11 +73,11 @@ Design decisions worth calling out:
   is real information (flying parcels). Only the progress *bar* is capped at
   100% in the UI, and turns amber ("100%+") when the true value exceeds it.
 
-## Data model (23 tables)
+## Data model (22 tables)
 
 | Area | Tables |
 |---|---|
-| Network & trips | `bases`, `pernas` (legs), `pacotes` (parcels), `historico_status` |
+| Network & trips | `bases`, `pernas` (legs), `pacotes` (parcels) |
 | Observability | `execucoes_etl`, `execucoes_taxas`, `execucoes_dropoff`, `execucoes_carga_processado`, `execucoes_mensal` |
 | Indicators | `taxas_expedicao` (3 on-time rates), `tickets_reclamacao` |
 | Drop-off / C2C | `pudo_coletas`, `c2c_pedidos`, `abrangencia_prazos` (delivery-time reference) |
