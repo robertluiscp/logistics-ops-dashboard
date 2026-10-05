@@ -12,11 +12,29 @@ indicators, customer-complaint tickets and drop-off / C2C volumes on top.
 
 ![Home](docs/img/01-home.png)
 
-| Trips & progress | "Expedido nao chegou" candidates |
-|---|---|
-| ![Trunk trips](docs/img/02-transporte-troncais.png) | ![Candidates](docs/img/03-expedido-nao-chegou.png) |
-| **On-time rate indicators** | **Drop-off points** |
-| ![Indicators](docs/img/04-indicadores-taxa-expedicao.png) | ![Drop-off](docs/img/06-pudo.png) |
+**Trips & progress** - every leg with stage, loaded/processed counts and an amber "100%+" bar when more parcels were unloaded than loaded:
+
+![Trunk trips](docs/img/02-transporte-troncais.png)
+
+**"Expedido nao chegou" candidates** - parcels loaded but not yet unloaded, with the countdown to the end of the 6-hour window:
+
+![Candidates](docs/img/03-expedido-nao-chegou.png)
+
+**On-time rate indicators** - three rates with month / week / day views, target line and a route x period matrix:
+
+![Indicators](docs/img/04-indicadores-taxa-expedicao.png)
+
+**Drop-off points (Pudo)** - monthly reference, parcel status, C2C ranking per pickup point, daily volume and top cities / points / origins:
+
+![Drop-off](docs/img/06-pudo.png)
+
+**C2C orders** - today vs. yesterday, on-time rate, monthly reference, daily goal gauge, breakdown by destination state / origin / base, and a filterable order table with the delivery-deadline countdown:
+
+![C2C](docs/img/07-c2c.png)
+
+**Tickets** - open complaint tickets with SLA countdown:
+
+![Tickets](docs/img/05-tickets.png)
 
 ## What it does
 
